@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.lib import utils
 import torch
 
 from algorithm.clustering import cluster
@@ -15,7 +14,7 @@ class API:
     def __init__(self):
         self.db = Dao()
 
-    def clustering(self, country='中国', airport='阎良机场',tCode=1, type='侦察机', model='运-9电子侦察机'):
+    def clustering(self, country='中国', airport='阎良机场',tCode=4010, type='侦察机', model='运-9电子侦察机'):
         self.cluster = cluster
         self.train = train
         table = ""
@@ -24,12 +23,12 @@ class API:
         elif tCode == 4009:
             table = "T_CM_WJZHYJJ"
         elif tCode == 4012:
-            table = "T_CM_WJZDGJJ"
+            table == "T_CM_WJZDGJJ"
         elif tCode == 4019:
-            table = "T_CM_WJHZJ"
+            table == "T_CM_WJHZJ"
         elif tCode == 4089:
-            table = "T_CM_WJMHJ"
-        print(table)
+            table == "T_CM_WJMHJ"
+
         name = '{}-{}-{}'.format(country, airport, model)
         track_line_len = len(self.db.getTrackLineName(country, airport, model))
         if track_line_len:
@@ -41,40 +40,27 @@ class API:
 
         country_code = int(self.db.selectByName(country))
         targetID = self.db.selectIDByModelTable(table, country_code, model)
-        print(targetID)
         data = self.db.getHistoryTrackByModel(country_code, airport, tCode, model)
         data = np.array(data)
-        print(data)
         targetid = np.array(list(set([i[3] for i in data])))
         b = []
         l = []
         h = []
         for t in targetid:
             tmp = data[data[:, 3] == t]
-            # xy_tmp = np.stack([tmp[:, 0].astype(np.float32),
-            #                   tmp[:, 1].astype(np.float32)], axis=-1)
-            # xy_tmp = torch.nn.functional.interpolate(torch.Tensor(
-            #     xy_tmp).unsqueeze(0).transpose(1, 2), size=(cfg.INPUT_LENGHT), mode='linear', align_corners=True).transpose(1, 2).numpy()[0]
-            # b.append(xy_tmp[:, 0].tolist())
-            # l.append(xy_tmp[:, 1].tolist())
-            # h.append(tmp[:, 2].astype(np.float32).tolist())
-
             xy_tmp = np.stack([tmp[:, 0].astype(np.float32),
-                              tmp[:, 1].astype(np.float32),
-                               tmp[:, 2].astype(np.float32)],
-                              axis=-1)
+                              tmp[:, 1].astype(np.float32)], axis=-1)
             xy_tmp = torch.nn.functional.interpolate(torch.Tensor(
                 xy_tmp).unsqueeze(0).transpose(1, 2), size=(cfg.INPUT_LENGHT), mode='linear', align_corners=True).transpose(1, 2).numpy()[0]
+
             b.append(xy_tmp[:, 0].tolist())
             l.append(xy_tmp[:, 1].tolist())
-            h.append(xy_tmp[:, 2].tolist())
+            h.append(tmp[:, 2].astype(np.float32).tolist())
 
         # b = None
         # l = None
         # h = None
-        # print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         train_trajectory = self.cluster([b, l, h])
-        print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         avg_trajectory_b, avg_trajectory_l = transform_XYZ2BLH(
             train_trajectory[0], train_trajectory[1], train_trajectory[1])
         train(train_trajectory[2], name)
@@ -86,7 +72,7 @@ class API:
             line_import_time = datetime.datetime.now().strftime(
                 '%Y-%m-%d %H:%M:%S')
             print(line_import_time)
-            line_name = name+'-典型航线'+str(i)
+            line_name = name+'-特征轨迹'+str(i)
             self.db.insertTrackLine(ID=line_time,
                                     TargetID=targetID,
                                     TargetSort=tCode,
@@ -128,7 +114,6 @@ class API:
         return self.db.selectTargetType(code,airport)
     def getTargetModel(self,name,airport,targetType):
         code = self.db.selectByName(name)
-        # print('code:'+str(code)+'airport:'+str(airport)+'targetType:'+str(targetType))
         return self.db.selectTargetModel(code,airport,targetType)
     def getRT(self,name,airport,type):
         return self.db.getTrackLineName(name,airport,type)
@@ -145,13 +130,7 @@ class API:
     def getRTPoint(self, name):
         return self.db.getTrackLinePointsByName(name)
 
-    def getLineIDByName(self,name):
-        return self.db.getTrackLineIDByName(name)
-    
-    def getUtils(self):
-        return cfg.cb
-# api = API()
-# api.clustering("不明","不明",4089,"民航","波音-777")
+
 
 
 
