@@ -76,9 +76,9 @@ class API:
         train_trajectory = self.cluster([b, l, h])
         print('+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
         
-        avg_trajectory_b, avg_trajectory_l, _temp = transform_XYZ2BLH(
-            train_trajectory[0], train_trajectory[1], train_trajectory[2])
-        train(train_trajectory[3], name)
+        avg_trajectory_b, avg_trajectory_l = transform_XYZ2BLH(
+            train_trajectory[0], train_trajectory[1], train_trajectory[1])
+        train(train_trajectory[2], name)
         linenames = []
         # 未知参数用-1暂时代替
         for i in range(len(avg_trajectory_b)):
